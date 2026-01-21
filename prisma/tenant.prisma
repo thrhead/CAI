@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/tenant-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("TENANT_DATABASE_URL")
+}
+
+// GreenLedger TR - Tenant Specific Models
+
+model Facility {
+  id               String           @id @default(cuid())
+  name             String
+  sector           String?          // Örn: Tekstil, Metal
+  location         String?
+  emissionRecords  EmissionRecord[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model EmissionRecord {
+  id               String   @id @default(cuid())
+  facilityId       String
+  facility         Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  category         String   // Örn: Electricity, Stationary Combustion
+  factorId         String   // emission-factors.ts içindeki ID ile eşleşir
+  amount           Float    // Kullanıcının girdiği miktar (örn: 1500 kWh)
+  unit             String   // Birim (örn: kWh)
+  tCO2e            Float    // Hesaplanan ton karbon eşdeğeri
+  periodStart      DateTime // Hesaplama döneminin başlangıcı
+  periodEnd        DateTime // Hesaplama döneminin bitişi
+  evidenceUrl      String?  // Kanıt dökümanı linki
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([facilityId])
+  @@index([periodStart, periodEnd])
+}
+
+// Keep original examples for now or remove if not needed
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  tasks       Task[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  projectId   String
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
